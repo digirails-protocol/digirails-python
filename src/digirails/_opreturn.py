@@ -2,7 +2,7 @@
 
 Implements the 5-byte DR header format from the DR-Pay specification:
   Offset 0: 0x4452 (2 bytes) — "DR" magic
-  Offset 2: 0x01 (1 byte) — header version
+  Offset 2: version byte (1 byte) — lower 7 bits = version, bit 7 = test flag
   Offset 3: sub-protocol (1 byte) — 0x00 DR-Core, 0x01 DR-Pay, 0x02 DR-Rep
   Offset 4: message type (1 byte)
 """
@@ -16,6 +16,7 @@ from digirails.network.constants import (
     DR_HEADER_SIZE,
     DR_MAGIC,
     DR_MAX_PAYLOAD,
+    DR_TEST_FLAG,
     DR_VERSION,
     CoreMessageType,
     PayMessageType,
@@ -24,29 +25,41 @@ from digirails.network.constants import (
 )
 
 
-def encode_header(sub_protocol: SubProtocol, message_type: int) -> bytes:
-    """Encode 5-byte DigiRails OP_RETURN header."""
-    return DR_MAGIC + bytes([DR_VERSION, sub_protocol, message_type])
+def encode_header(
+    sub_protocol: SubProtocol, message_type: int, *, test: bool = False
+) -> bytes:
+    """Encode 5-byte DigiRails OP_RETURN header.
+
+    Args:
+        sub_protocol: Sub-protocol identifier.
+        message_type: Message type code within the sub-protocol.
+        test: If True, set the test flag (bit 7) in the version byte.
+    """
+    version_byte = DR_VERSION | DR_TEST_FLAG if test else DR_VERSION
+    return DR_MAGIC + bytes([version_byte, sub_protocol, message_type])
 
 
-def decode_header(data: bytes) -> tuple[int, SubProtocol, int, bytes] | None:
+def decode_header(data: bytes) -> tuple[int, SubProtocol, int, bytes, bool] | None:
     """Decode a DigiRails OP_RETURN payload.
 
     Returns:
-        (version, sub_protocol, message_type, payload) or None if not a valid DR header.
+        (version, sub_protocol, message_type, payload, is_test) or None
+        if not a valid DR header.
     """
     if len(data) < DR_HEADER_SIZE:
         return None
     if data[:2] != DR_MAGIC:
         return None
-    version = data[2]
+    raw_version = data[2]
+    is_test = bool(raw_version & DR_TEST_FLAG)
+    version = raw_version & 0x7F
     try:
         sub_protocol = SubProtocol(data[3])
     except ValueError:
         return None
     message_type = data[4]
     payload = data[DR_HEADER_SIZE:]
-    return (version, sub_protocol, message_type, payload)
+    return (version, sub_protocol, message_type, payload, is_test)
 
 
 # --- DR-Core (0x00) messages ---

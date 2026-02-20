@@ -12,7 +12,7 @@ from digirails._opreturn import (
     encode_service_declaration,
     manifest_hash,
 )
-from digirails.network.constants import DR_VERSION, SubProtocol
+from digirails.network.constants import DR_VERSION, DR_TEST_FLAG, SubProtocol
 
 
 class TestHeader:
@@ -29,17 +29,76 @@ class TestHeader:
         data = b"\x44\x52\x01\x01\x02" + b"payload"
         result = decode_header(data)
         assert result is not None
-        ver, sp, mt, payload = result
+        ver, sp, mt, payload, is_test = result
         assert ver == DR_VERSION
         assert sp == SubProtocol.DR_PAY
         assert mt == 0x02
         assert payload == b"payload"
+        assert is_test is False
 
     def test_decode_too_short(self):
         assert decode_header(b"\x44\x52\x01") is None
 
     def test_decode_wrong_magic(self):
         assert decode_header(b"\x00\x00\x01\x01\x01") is None
+
+
+class TestTestFlag:
+    def test_encode_with_test_flag(self):
+        header = encode_header(SubProtocol.DR_PAY, 0x01, test=True)
+        assert header == b"\x44\x52\x81\x01\x01"
+        assert header[2] == DR_VERSION | DR_TEST_FLAG
+
+    def test_encode_without_test_flag(self):
+        header = encode_header(SubProtocol.DR_PAY, 0x01, test=False)
+        assert header[2] == DR_VERSION
+
+    def test_decode_test_flag(self):
+        data = b"\x44\x52\x81\x01\x02" + b"data"
+        result = decode_header(data)
+        assert result is not None
+        ver, sp, mt, payload, is_test = result
+        assert ver == DR_VERSION
+        assert is_test is True
+        assert sp == SubProtocol.DR_PAY
+        assert mt == 0x02
+        assert payload == b"data"
+
+    def test_decode_production(self):
+        data = b"\x44\x52\x01\x01\x02"
+        result = decode_header(data)
+        assert result is not None
+        ver, _, _, _, is_test = result
+        assert ver == DR_VERSION
+        assert is_test is False
+
+    def test_roundtrip_test_flag(self):
+        header = encode_header(SubProtocol.DR_REP, 0x01, test=True)
+        result = decode_header(header)
+        assert result is not None
+        ver, sp, mt, _, is_test = result
+        assert ver == DR_VERSION
+        assert sp == SubProtocol.DR_REP
+        assert mt == 0x01
+        assert is_test is True
+
+    def test_roundtrip_production(self):
+        header = encode_header(SubProtocol.DR_CORE, 0x02, test=False)
+        result = decode_header(header)
+        assert result is not None
+        ver, sp, mt, _, is_test = result
+        assert ver == DR_VERSION
+        assert sp == SubProtocol.DR_CORE
+        assert mt == 0x02
+        assert is_test is False
+
+    def test_version_extraction_strips_flag(self):
+        """Version should be extracted from lower 7 bits only."""
+        # Manually craft a byte with test flag set and version 1
+        data = bytes([0x44, 0x52, 0x81, 0x01, 0x01])
+        result = decode_header(data)
+        assert result is not None
+        assert result[0] == 1  # version is 1, not 0x81
 
 
 class TestIdentity:

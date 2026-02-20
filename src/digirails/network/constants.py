@@ -7,8 +7,11 @@ from enum import IntEnum
 # On-chain magic prefix: ASCII "DR"
 DR_MAGIC = b"\x44\x52"
 
-# DigiRails header version
+# DigiRails header version (lower 7 bits; bit 7 is the test flag)
 DR_VERSION = 0x01
+
+# Test flag: bit 7 of the version byte marks test/integration transactions
+DR_TEST_FLAG = 0x80
 
 # DR-Pay protocol version string (used in JSON messages)
 PROTOCOL_VERSION = "0.2.0"
