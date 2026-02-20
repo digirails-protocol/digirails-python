@@ -237,7 +237,7 @@ def build_payment_tx(
     to_address: str,
     amount_sat: int,
     change_address: str,
-    fee_sat: int = 1000,
+    fee_sat: int = 20000,
     op_return_data: bytes | None = None,
     network: NetworkParams = MAINNET,
 ) -> Transaction:

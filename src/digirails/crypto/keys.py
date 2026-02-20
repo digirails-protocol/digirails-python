@@ -57,15 +57,22 @@ def privkey_to_pubkey(private_key: bytes, compressed: bool = True) -> bytes:
 
 
 def sign_data(private_key: bytes, data: bytes) -> bytes:
-    """Sign a 32-byte hash and return a DER-encoded signature."""
+    """Sign a 32-byte hash and return a DER-encoded signature (low-S per BIP-62)."""
     if _BACKEND == "coincurve":
         pk = _CoinPrivateKey(private_key)
         return pk.sign(data, hasher=None)
     else:
-        from ecdsa.util import sigencode_der  # type: ignore[import-untyped]
+        from ecdsa.util import sigencode_der, sigdecode_der  # type: ignore[import-untyped]
 
         sk = _ECDSASigningKey.from_string(private_key, curve=SECP256k1)
-        return sk.sign_digest(data, sigencode=sigencode_der)
+        sig_der = sk.sign_digest(data, sigencode=sigencode_der)
+
+        # BIP-62 low-S normalization: if S > N/2, replace with N - S
+        order = SECP256k1.order
+        r, s = sigdecode_der(sig_der, order)
+        if s > order // 2:
+            s = order - s
+        return sigencode_der(r, s, order)
 
 
 def pubkey_to_p2wpkh_address(pubkey: bytes, network: NetworkParams = MAINNET) -> str:
