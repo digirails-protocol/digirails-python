@@ -124,6 +124,7 @@ class Agent:
         params: dict[str, Any] | None = None,
         max_amount: str = "0.01",
         confirmation_tier: ConfirmationTier = ConfirmationTier.MEMPOOL,
+        test: bool = False,
     ) -> ServiceDelivery:
         """Complete the full payment flow in one call.
 
@@ -133,6 +134,8 @@ class Agent:
         4. Build + sign + broadcast transaction
         5. Send PAYMENT_BROADCAST
         6. Receive SERVICE_DELIVERY
+
+        Set test=True to mark the on-chain OP_RETURN with the test flag.
         """
         # Optionally fetch manifest to discover seller address
         manifest = await self.discover(seller_url)
@@ -145,6 +148,7 @@ class Agent:
             max_amount=max_amount,
             confirmation_tier=confirmation_tier,
             seller_address=seller_address,
+            test=test,
         )
 
     async def discover(self, url: str) -> Manifest | None:

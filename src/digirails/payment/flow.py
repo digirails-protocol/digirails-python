@@ -27,6 +27,7 @@ class PaymentFlow:
         max_amount: str = "0.01",
         confirmation_tier: ConfirmationTier = ConfirmationTier.MEMPOOL,
         seller_address: str = "",
+        test: bool = False,
     ) -> ServiceDelivery:
         """Complete the full buyer-side flow in one call."""
         invoice, _ = await request_service(
@@ -43,6 +44,7 @@ class PaymentFlow:
             wallet=self._wallet,
             invoice=invoice,
             seller_url=seller_url,
+            test=test,
         )
 
         return delivery

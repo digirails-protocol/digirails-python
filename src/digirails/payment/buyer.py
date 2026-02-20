@@ -79,6 +79,8 @@ async def pay_invoice(
     wallet: Wallet,
     invoice: PaymentInvoice,
     seller_url: str,
+    *,
+    test: bool = False,
 ) -> ServiceDelivery:
     """Build TX, broadcast, send PAYMENT_BROADCAST, receive SERVICE_DELIVERY."""
     amount_sat = int(Decimal(invoice.payment.amount) * SATOSHIS_PER_DGB)
@@ -87,7 +89,7 @@ async def pay_invoice(
     # Invoice IDs are opaque strings — encode as UTF-8 and take first 16 bytes
     id_raw = invoice.id.encode("utf-8")
     invoice_id_bytes = (id_raw + b"\x00" * 16)[:16]
-    op_return_data = encode_payment_memo(invoice_id_bytes)
+    op_return_data = encode_payment_memo(invoice_id_bytes, test=test)
 
     # Build and sign the transaction
     tx = await wallet.build_payment(

@@ -65,7 +65,7 @@ def decode_header(data: bytes) -> tuple[int, SubProtocol, int, bytes, bool] | No
 # --- DR-Core (0x00) messages ---
 
 
-def encode_identity_declaration(label: str = "") -> bytes:
+def encode_identity_declaration(label: str = "", *, test: bool = False) -> bytes:
     """Build OP_RETURN payload for identity declaration.
 
     Format: DR_HEADER(Core, 0x01) + label (UTF-8, 0-75 bytes)
@@ -75,24 +75,24 @@ def encode_identity_declaration(label: str = "") -> bytes:
         raise ValueError(
             f"Label too long: {len(label_bytes)} bytes (max {DR_MAX_PAYLOAD})"
         )
-    return encode_header(SubProtocol.DR_CORE, CoreMessageType.IDENTITY_DECLARATION) + label_bytes
+    return encode_header(SubProtocol.DR_CORE, CoreMessageType.IDENTITY_DECLARATION, test=test) + label_bytes
 
 
-def encode_identity_transfer(new_address_hash: bytes) -> bytes:
+def encode_identity_transfer(new_address_hash: bytes, *, test: bool = False) -> bytes:
     """Build OP_RETURN payload for identity transfer.
 
     Format: DR_HEADER(Core, 0x02) + new_address (20 or 32 bytes)
     """
     if len(new_address_hash) not in (20, 32):
         raise ValueError(f"Address hash must be 20 or 32 bytes, got {len(new_address_hash)}")
-    return encode_header(SubProtocol.DR_CORE, CoreMessageType.IDENTITY_TRANSFER) + new_address_hash
+    return encode_header(SubProtocol.DR_CORE, CoreMessageType.IDENTITY_TRANSFER, test=test) + new_address_hash
 
 
 # --- DR-Pay (0x01) messages ---
 
 
 def encode_service_declaration(
-    category: int, flags: int, manifest_hash: bytes
+    category: int, flags: int, manifest_hash: bytes, *, test: bool = False
 ) -> bytes:
     """Build OP_RETURN payload for service declaration.
 
@@ -101,11 +101,13 @@ def encode_service_declaration(
     """
     if len(manifest_hash) != 32:
         raise ValueError(f"Manifest hash must be 32 bytes, got {len(manifest_hash)}")
-    header = encode_header(SubProtocol.DR_PAY, PayMessageType.SERVICE_DECLARATION)
+    header = encode_header(SubProtocol.DR_PAY, PayMessageType.SERVICE_DECLARATION, test=test)
     return header + struct.pack(">H", category) + struct.pack(">H", flags) + manifest_hash
 
 
-def encode_payment_memo(invoice_id: bytes, service_ref: bytes = b"") -> bytes:
+def encode_payment_memo(
+    invoice_id: bytes, service_ref: bytes = b"", *, test: bool = False
+) -> bytes:
     """Build OP_RETURN payload for payment memo.
 
     Format: DR_HEADER(Pay, 0x02) + invoice_id (16B) + service_ref (0-59B)
@@ -116,14 +118,16 @@ def encode_payment_memo(invoice_id: bytes, service_ref: bytes = b"") -> bytes:
     max_ref = DR_MAX_PAYLOAD - 16  # 75 - 16 = 59 bytes
     if len(service_ref) > max_ref:
         raise ValueError(f"Service ref too long: {len(service_ref)} bytes (max {max_ref})")
-    header = encode_header(SubProtocol.DR_PAY, PayMessageType.PAYMENT_MEMO)
+    header = encode_header(SubProtocol.DR_PAY, PayMessageType.PAYMENT_MEMO, test=test)
     return header + invoice_id + service_ref
 
 
 # --- DR-Rep (0x02) messages ---
 
 
-def encode_attestation(target_address_hash: bytes, score: int, nonce: int) -> bytes:
+def encode_attestation(
+    target_address_hash: bytes, score: int, nonce: int, *, test: bool = False
+) -> bytes:
     """Build OP_RETURN payload for reputation attestation.
 
     Format: DR_HEADER(Rep, 0x01) + target_address (20B) + score (1B) + nonce (4B)
@@ -133,7 +137,7 @@ def encode_attestation(target_address_hash: bytes, score: int, nonce: int) -> by
         raise ValueError(f"Target address hash must be 20 bytes, got {len(target_address_hash)}")
     if not 0 <= score <= 255:
         raise ValueError(f"Score must be 0-255, got {score}")
-    header = encode_header(SubProtocol.DR_REP, RepMessageType.ATTESTATION)
+    header = encode_header(SubProtocol.DR_REP, RepMessageType.ATTESTATION, test=test)
     return header + target_address_hash + bytes([score]) + struct.pack(">I", nonce)
 
 
