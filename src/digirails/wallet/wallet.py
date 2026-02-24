@@ -100,7 +100,7 @@ class Wallet:
         self,
         to_address: str,
         amount_sat: int,
-        fee_sat: int = 20000,
+        fee_sat: int = 50000,
         op_return_data: bytes | None = None,
     ) -> Transaction:
         """Build and sign a payment transaction."""
