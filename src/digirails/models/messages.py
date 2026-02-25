@@ -22,7 +22,7 @@ class ServiceParams(BaseModel):
 
 
 class RequestPayment(BaseModel):
-    currency: Literal["DGB", "DUSD"] = "DGB"
+    currency: Literal["DGB", "DD"] = "DGB"
     max_amount: str
     confirmation_tier: ConfirmationTier
 
@@ -46,7 +46,7 @@ class PaymentRequest(BaseModel):
 class InvoicePayment(BaseModel):
     address: str
     amount: str
-    currency: Literal["DGB", "DUSD"] = "DGB"
+    currency: Literal["DGB", "DD"] = "DGB"
     expires_at: int
     memo: str | None = None
 
