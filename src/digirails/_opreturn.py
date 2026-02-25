@@ -92,17 +92,27 @@ def encode_identity_transfer(new_address_hash: bytes, *, test: bool = False) -> 
 
 
 def encode_service_declaration(
-    category: int, flags: int, manifest_hash: bytes, *, test: bool = False
+    category: int,
+    flags: int,
+    manifest_hash: bytes,
+    *,
+    manifest_domain: str = "",
+    test: bool = False,
 ) -> bytes:
     """Build OP_RETURN payload for service declaration.
 
-    Format: DR_HEADER(Pay, 0x01) + category (2B) + flags (2B) + manifest_hash (32B)
-    Total: 41 bytes
+    Format: DR_HEADER(Pay, 0x01) + category (2B) + flags (2B) + manifest_hash (32B) + [domain]
+    Total: 41 bytes without domain, up to 80 bytes with domain.
     """
     if len(manifest_hash) != 32:
         raise ValueError(f"Manifest hash must be 32 bytes, got {len(manifest_hash)}")
+    domain_bytes = manifest_domain.encode("utf-8") if manifest_domain else b""
+    if len(domain_bytes) > DR_MAX_PAYLOAD - 36:  # 75 - 36 = 39 bytes
+        raise ValueError(
+            f"Domain too long: {len(domain_bytes)} bytes (max {DR_MAX_PAYLOAD - 36})"
+        )
     header = encode_header(SubProtocol.DR_PAY, PayMessageType.SERVICE_DECLARATION, test=test)
-    return header + struct.pack(">H", category) + struct.pack(">H", flags) + manifest_hash
+    return header + struct.pack(">H", category) + struct.pack(">H", flags) + manifest_hash + domain_bytes
 
 
 def encode_payment_memo(

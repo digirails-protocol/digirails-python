@@ -14,7 +14,7 @@ DR_VERSION = 0x01
 DR_TEST_FLAG = 0x80
 
 # DR-Pay protocol version string (used in JSON messages)
-PROTOCOL_VERSION = "0.2.0"
+PROTOCOL_VERSION = "0.3.0"
 
 # DigiByte OP_RETURN size limit
 OP_RETURN_MAX_BYTES = 80
