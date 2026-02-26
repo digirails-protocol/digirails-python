@@ -74,7 +74,7 @@ Buyer                                Seller
   |<-----------------------------------|
   |                                    |
   |  POST /drpay/request               |
-  |----------------------------------->|  2. PAYMENT_REQUEST
+  |----------------------------------->|  2. SERVICE_REQUEST
   |<-----------------------------------|  3. PAYMENT_INVOICE
   |                                    |
   |  [build, sign, broadcast tx]       |

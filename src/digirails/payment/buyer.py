@@ -33,7 +33,7 @@ async def request_service(
     confirmation_tier: ConfirmationTier = ConfirmationTier.MEMPOOL,
     seller_address: str = "",
 ) -> tuple[PaymentInvoice, str]:
-    """Send a PAYMENT_REQUEST, receive a PAYMENT_INVOICE.
+    """Send a SERVICE_REQUEST, receive a PAYMENT_INVOICE.
 
     Returns (invoice, request_endpoint_url).
     """

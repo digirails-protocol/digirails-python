@@ -44,7 +44,7 @@ class SellerFlow:
         self._pending: dict[str, PendingInvoice] = {}
 
     def handle_request(self, request: PaymentRequest) -> PaymentInvoice | ErrorResponse:
-        """Process a PAYMENT_REQUEST, return a PAYMENT_INVOICE or error."""
+        """Process a SERVICE_REQUEST, return a PAYMENT_INVOICE or error."""
         service = self._services.get(request.service.id)
         if service is None:
             return ErrorResponse(

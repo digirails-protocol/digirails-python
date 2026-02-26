@@ -57,7 +57,7 @@ async def main():
     # --- Execute the payment flow ---
     print("=== Payment Flow ===")
     print("1. Buyer discovers seller manifest...")
-    print("2. Buyer sends PAYMENT_REQUEST...")
+    print("2. Buyer sends SERVICE_REQUEST...")
     print("3. Seller returns PAYMENT_INVOICE...")
     print("4. Buyer builds, signs, broadcasts TX...")
     print("5. Buyer sends PAYMENT_BROADCAST...")

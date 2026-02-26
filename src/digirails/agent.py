@@ -129,7 +129,7 @@ class Agent:
         """Complete the full payment flow in one call.
 
         1. Fetch seller manifest
-        2. Send PAYMENT_REQUEST
+        2. Send SERVICE_REQUEST
         3. Receive PAYMENT_INVOICE
         4. Build + sign + broadcast transaction
         5. Send PAYMENT_BROADCAST
