@@ -10,6 +10,7 @@ from digirails.models.messages import (
     PaymentBroadcast,
     PaymentInvoice,
     PaymentRequest,
+    RefundInfo,
     ServiceDelivery,
 )
 from digirails.network.params import MAINNET, REGTEST, TESTNET, NetworkParams
@@ -27,6 +28,7 @@ __all__ = [
     "PaymentBroadcast",
     "ServiceDelivery",
     "ErrorResponse",
+    "RefundInfo",
     "ConfirmationTier",
     "ServiceCategory",
     "ErrorCode",

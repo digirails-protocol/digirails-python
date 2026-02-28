@@ -50,6 +50,7 @@ class CoreMessageType(IntEnum):
 class PayMessageType(IntEnum):
     SERVICE_DECLARATION = 0x01
     PAYMENT_MEMO = 0x02
+    REFUND_MEMO = 0x03
 
 
 class RepMessageType(IntEnum):

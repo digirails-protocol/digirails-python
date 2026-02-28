@@ -32,7 +32,7 @@ class TestPaymentRequest:
         )
         data = pr.model_dump(by_alias=True)
         assert data["protocol"] == "drpay"
-        assert data["version"] == "0.2.0"
+        assert data["version"] == "0.3.0"
         assert data["type"] == "payment_request"
         assert data["from"]["address"] == "dgb1qbuyer"
         assert data["service"]["id"] == "echo"
@@ -125,7 +125,7 @@ class TestManifest:
             ],
         )
         data = m.model_dump()
-        assert data["drpay"] == "0.2.0"
+        assert data["drpay"] == "0.3.0"
         assert len(data["services"]) == 1
         assert data["services"][0]["id"] == "echo"
 

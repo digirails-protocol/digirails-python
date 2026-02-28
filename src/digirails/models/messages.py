@@ -93,10 +93,18 @@ class ServiceDelivery(BaseModel):
     result: dict[str, Any] | None = None
 
 
+class RefundInfo(BaseModel):
+    """Refund details attached to an error when auto-refund succeeds."""
+
+    txid: str
+    amount: str  # DGB amount refunded
+
+
 class ErrorDetail(BaseModel):
     code: ErrorCode
     message: str
     retry: bool = False
+    refund: RefundInfo | None = None
 
 
 class ErrorResponse(BaseModel):

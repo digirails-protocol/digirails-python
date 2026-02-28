@@ -9,6 +9,7 @@ from digirails._opreturn import (
     encode_identity_declaration,
     encode_identity_transfer,
     encode_payment_memo,
+    encode_refund_memo,
     encode_service_declaration,
     manifest_hash,
 )
@@ -166,6 +167,35 @@ class TestPaymentMemo:
     def test_ref_too_long(self):
         with pytest.raises(ValueError):
             encode_payment_memo(b"\x00" * 16, b"x" * 60)
+
+
+class TestRefundMemo:
+    def test_encode(self):
+        invoice_id = b"\x01" * 16
+        data = encode_refund_memo(invoice_id)
+        assert len(data) == 21  # 5 header + 16 invoice_id
+        assert data[:5] == b"\x44\x52\x01\x01\x03"  # DR magic + v1 + Pay + RefundMemo
+        assert data[5:] == invoice_id
+
+    def test_encode_test_flag(self):
+        invoice_id = b"\x02" * 16
+        data = encode_refund_memo(invoice_id, test=True)
+        assert data[:5] == b"\x44\x52\x81\x01\x03"  # test flag set
+
+    def test_invalid_invoice_id_length(self):
+        with pytest.raises(ValueError):
+            encode_refund_memo(b"\x00" * 8)
+
+    def test_roundtrip_decode(self):
+        invoice_id = b"\xab" * 16
+        data = encode_refund_memo(invoice_id)
+        result = decode_header(data)
+        assert result is not None
+        ver, sp, mt, payload, is_test = result
+        assert sp == SubProtocol.DR_PAY
+        assert mt == 0x03
+        assert payload == invoice_id
+        assert is_test is False
 
 
 class TestAttestation:

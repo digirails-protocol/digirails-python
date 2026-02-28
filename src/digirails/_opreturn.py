@@ -132,6 +132,18 @@ def encode_payment_memo(
     return header + invoice_id + service_ref
 
 
+def encode_refund_memo(invoice_id: bytes, *, test: bool = False) -> bytes:
+    """Build OP_RETURN payload for refund memo.
+
+    Format: DR_HEADER(Pay, 0x03) + invoice_id (16B)
+    Total: 21 bytes
+    """
+    if len(invoice_id) != 16:
+        raise ValueError(f"Invoice ID must be 16 bytes, got {len(invoice_id)}")
+    header = encode_header(SubProtocol.DR_PAY, PayMessageType.REFUND_MEMO, test=test)
+    return header + invoice_id
+
+
 # --- DR-Rep (0x02) messages ---
 
 

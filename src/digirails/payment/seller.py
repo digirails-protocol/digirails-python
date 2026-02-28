@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from decimal import Decimal
 from typing import Any, Callable
 
+from digirails._opreturn import encode_refund_memo
 from digirails.exceptions import VerificationError
 from digirails.models.enums import ConfirmationTier, ErrorCode
 from digirails.models.messages import (
@@ -16,12 +18,18 @@ from digirails.models.messages import (
     PaymentBroadcast,
     PaymentInvoice,
     PaymentRequest,
+    RefundInfo,
     ServiceDelivery,
 )
 from digirails.models.manifest import Service
 from digirails.network.constants import SATOSHIS_PER_DGB
 from digirails.payment.verification import verify_raw_tx_simple
 from digirails.wallet.wallet import Wallet
+
+logger = logging.getLogger(__name__)
+
+DUST_THRESHOLD_SAT = 546
+REFUND_FEE_SAT = 50_000
 
 
 class PendingInvoice:
@@ -37,11 +45,18 @@ class PendingInvoice:
 class SellerFlow:
     """Manages the seller side of the payment flow."""
 
-    def __init__(self, wallet: Wallet, services: dict[str, Service], handlers: dict[str, Callable[..., Any]]):
+    def __init__(
+        self,
+        wallet: Wallet,
+        services: dict[str, Service],
+        handlers: dict[str, Callable[..., Any]],
+        auto_refund: bool = True,
+    ):
         self._wallet = wallet
         self._services = services
         self._handlers = handlers
         self._pending: dict[str, PendingInvoice] = {}
+        self._auto_refund = auto_refund
 
     def handle_request(self, request: PaymentRequest) -> PaymentInvoice | ErrorResponse:
         """Process a SERVICE_REQUEST, return a PAYMENT_INVOICE or error."""
@@ -80,6 +95,36 @@ class SellerFlow:
         )
 
         return invoice
+
+    async def _attempt_refund(self, pending: PendingInvoice) -> RefundInfo | None:
+        """Attempt to refund the buyer. Returns RefundInfo on success, None on failure."""
+        if not self._auto_refund or not self._wallet._rpc:
+            return None
+
+        payment_sat = int(Decimal(pending.invoice.payment.amount) * SATOSHIS_PER_DGB)
+        if payment_sat <= DUST_THRESHOLD_SAT:
+            logger.warning("Payment too small to refund: %d sat", payment_sat)
+            return None
+
+        buyer_address = pending.request.from_.address
+
+        try:
+            id_raw = pending.invoice.id.encode("utf-8")
+            invoice_id_bytes = (id_raw + b"\x00" * 16)[:16]
+            op_return_data = encode_refund_memo(invoice_id_bytes)
+
+            await self._wallet.sync_utxos()
+            tx = await self._wallet.build_payment(
+                buyer_address, payment_sat, fee_sat=REFUND_FEE_SAT,
+                op_return_data=op_return_data,
+            )
+            txid = await self._wallet.broadcast(tx)
+            refund_dgb = str(Decimal(payment_sat) / SATOSHIS_PER_DGB)
+            logger.info("Auto-refund sent: %s DGB to %s (txid: %s)", refund_dgb, buyer_address, txid)
+            return RefundInfo(txid=txid, amount=refund_dgb)
+        except Exception as refund_err:
+            logger.error("Auto-refund failed: %s", refund_err)
+            return None
 
     async def handle_broadcast(self, broadcast: PaymentBroadcast) -> ServiceDelivery | ErrorResponse:
         """Process a PAYMENT_BROADCAST, verify payment, execute handler, return SERVICE_DELIVERY."""
@@ -160,20 +205,26 @@ class SellerFlow:
         pending.paid = True
         handler = self._handlers.get(pending.service.id)
         if handler is None:
+            del self._pending[broadcast.invoice_id]
+            refund = await self._attempt_refund(pending)
             return ErrorResponse(
                 error=ErrorDetail(
                     code=ErrorCode.SERVICE_UNAVAILABLE,
                     message="Service handler not registered",
+                    refund=refund,
                 ),
             )
 
         try:
             result = handler(pending.request.service.params or {})
         except Exception as e:
+            del self._pending[broadcast.invoice_id]
+            refund = await self._attempt_refund(pending)
             return ErrorResponse(
                 error=ErrorDetail(
                     code=ErrorCode.SERVICE_UNAVAILABLE,
                     message=f"Service execution failed: {e}",
+                    refund=refund,
                 ),
             )
 
