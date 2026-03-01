@@ -43,7 +43,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/digirails-protocol/digirails-python"
 Repository = "https://github.com/digirails-protocol/digirails-python"
-Specification = "https://github.com/digirails-protocol/spec"
+Specification = "https://github.com/digirails-protocol/digirails-spec"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/digirails"]
