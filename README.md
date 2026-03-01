@@ -1,6 +1,6 @@
 # digirails
 
-Python SDK for the [DR-Pay protocol](https://github.com/digirails-protocol/spec) — permissionless AI agent payments on DigiByte.
+Python SDK for the [DR-Pay protocol](https://github.com/digirails-protocol/digirails-spec) — permissionless AI agent payments on DigiByte.
 
 ## What is this?
 
@@ -112,7 +112,7 @@ python examples/regtest_demo.py
 
 ## Protocol Version
 
-Implements DR-Pay specification v0.2.0.
+Implements DR-Pay specification v0.3.0.
 
 ## License
 
