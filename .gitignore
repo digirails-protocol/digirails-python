@@ -19,3 +19,4 @@ htmlcov/
 *.pyd
 .env
 *.keyfile
+NUL
